@@ -2,16 +2,26 @@
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
+using System.Diagnostics;
+using System.Net.NetworkInformation;
 
 namespace HydroInfoReptile
 {
     public partial class Form_Main : Form
     {
+        const int net_try_time = 300 * 1000;            //网络检测等待时间(300秒)
+        const int max_net_try_times = 24;               //最大网络检测次数
+        const string main_page = "http://xxfb.hydroinfo.gov.cn/ssIndex.html"; //雨水情网站主页
+
+        bool net_status = false;                        //网络状态，初始为false
+        int net_try_times = 0;                          //网络状态检测尝试次数
+
         Class_Table[] _table = new Class_Table[4];      //数据表
         int _webFlag = 0;                               //浏览器加载进度标记
         string _html = "";                              //网页源代码
         int loadResult = 0;                             //是否成功获取数据 0 - 未知;1 - 成功;-1 - 失败, -2 - 存在失败
 
+        Timer timer_netgateCheck;                       //检测网络状态
         Timer timer_loadDelay;                          //每500毫秒检查一次是否加载成功
         Timer timer_loadDeadline;                       //最长允许加载10分钟
         Timer timer_closeDelay;                         //延迟10秒关闭程序
@@ -23,6 +33,8 @@ namespace HydroInfoReptile
             InitializeComponent();
         }
 
+
+        
 
         /// <summary>
         /// 窗口加载事件
@@ -40,16 +52,29 @@ namespace HydroInfoReptile
             InitialControl();
             LoadSetting();
 
-            _webFlag = 1;
-            loadResult = 0;
-            wb.Navigate("http://xxfb.hydroinfo.gov.cn/ssIndex.html");
-            //wb.Navigate(@"E:\Design\Programs\Program\测试及试验\C#\HydroInfoReptile\HydroInfoReptile\bin\Debug\HydroData\201450603.html");
-            //wb.Navigate(@"D:\hosts.txt");
+                       
+            net_status = CheckNetStatus();
+            net_try_times++;
 
-            notify.BalloonTipText = "正在连接到服务器...";
-            notify.Visible = true;
-            notify.ShowBalloonTip(1000);
-            WriteLog("Connenting", "");
+            WriteLog("Netgate", net_status.ToString());
+            PrintLog("Netgate", net_status.ToString());
+            
+            if (net_status) // 如果网络状态为true，则连接服务器
+            {
+                notify.BalloonTipText = "正在连接到服务器...";
+                notify.Visible = true;
+                notify.ShowBalloonTip(1000);
+                WriteLog("Connenting", "");
+                PrintLog("Connecting...", "");
+
+                _webFlag = 1;
+                loadResult = 0;
+                wb.Navigate(main_page);                
+            }
+            else // 如果网络状态为false，则启动周期性网络检测
+            {
+                timer_netgateCheck.Start();
+            }
         }
 
         /// <summary>
@@ -63,6 +88,7 @@ namespace HydroInfoReptile
             WriteLog("ProgramStop", "");
             WriteLog("", "");
         }
+
 
         /// <summary>
         /// 浏览器加载完成事件
@@ -83,6 +109,8 @@ namespace HydroInfoReptile
                 notify.BalloonTipText = "正在获取数据...";
                 notify.ShowBalloonTip(1000);
 
+                PrintLog("Downloading...", "");
+
                 _webFlag = 2;
                 wb.Navigate("javascript:showSK();");
 
@@ -90,6 +118,49 @@ namespace HydroInfoReptile
                 timer_loadDeadline.Start();
             }
         }
+
+
+        /// <summary>
+        /// 该timer在程序开始时周期性执行，用以检测当前网络状态，若网络状态正常则开始加载雨水情网页
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void timer_netgateCheck_Tick(object sender, EventArgs e)
+        {
+            net_status = CheckNetStatus();
+            net_try_times++;
+
+            WriteLog("Netgate", net_status.ToString());
+            PrintLog("Netgate", net_status.ToString());
+
+            // 当前网络状态检测次数大于最大网络检测次数，则弹出窗口
+            if (net_try_times >= max_net_try_times)
+            {
+                timer_netgateCheck.Stop();
+
+                Show();
+                WindowState = FormWindowState.Normal;
+
+                return;
+            }
+
+            // 如果网络状态为false，则退出，等待下一次触发
+            if (!net_status)
+            {
+                return;
+            }
+
+            notify.BalloonTipText = "正在连接到服务器...";
+            notify.Visible = true;
+            notify.ShowBalloonTip(1000);
+            WriteLog("Connenting", "");
+            PrintLog("Connecting...", "");
+
+            _webFlag = 1;
+            loadResult = 0;
+            wb.Navigate(main_page);
+        }
+
 
         /// <summary>
         /// 该timer被执行表明网页加载失败
@@ -105,6 +176,7 @@ namespace HydroInfoReptile
             loadResult = -1;
 
             WriteLog("DataDownload", "Timeout");
+            PrintLog("DataDownload", "Failed");
             notify.BalloonTipText = "获取数据失败, 单击此处以重新获取.";
             notify.ShowBalloonTip(60000);
         }
@@ -125,6 +197,7 @@ namespace HydroInfoReptile
             timer.Stop();
             timer_loadDeadline.Stop();
             WriteLog("DataDownload", "Successful");
+            PrintLog("Download", "Successful");
 
             _html = wb.Document.Body.InnerHtml;
 
@@ -152,10 +225,7 @@ namespace HydroInfoReptile
             {
                 notify.BalloonTipText = "有未知错误发生, 请查看日志及源文件!";
                 notify.ShowBalloonTip(60000);
-
-                label_Joke.ForeColor = System.Drawing.Color.Red;
-                label_Joke.Text = "有未知错误发生, 请尽快处理!";
-
+                
                 panel_error.Visible = true;
                 Show();
                 WindowState = FormWindowState.Normal;
@@ -164,6 +234,7 @@ namespace HydroInfoReptile
             }
 
             timer_closeDelay.Start();
+            PrintLog("Complete", "");
         }
 
 
@@ -269,6 +340,7 @@ namespace HydroInfoReptile
             StreamReader sr = new StreamReader("option.ini", Encoding.Default);
 
             Class_Table._dataDir = sr.ReadLine();
+            Directory.CreateDirectory(Class_Table._dataDir);
 
             sr.Close();
 
@@ -288,6 +360,11 @@ namespace HydroInfoReptile
             //网页加载器
             wb = new WebBrowser();
             wb.DocumentCompleted += wb_DocumentCompleted;
+
+            //每一段时间检测一次网络状态
+            timer_netgateCheck = new Timer();
+            timer_netgateCheck.Interval = net_try_time;
+            timer_netgateCheck.Tick += timer_netgateCheck_Tick;
 
             //每500毫秒检查一次是否获取到数据
             timer_loadDelay = new Timer();
@@ -320,10 +397,12 @@ namespace HydroInfoReptile
         }
 
 
+
         /// <summary>
         /// 写入日志
         /// </summary>
-        /// <param name="content"></param>
+        /// <param name="content">动作</param>
+        /// <param name="status">状态</param>
         private void WriteLog(string content, string status)
         {
             StreamWriter sw = new StreamWriter("history.log", true, Encoding.Unicode);
@@ -340,6 +419,56 @@ namespace HydroInfoReptile
             sw.Close();
         }
 
+
+        /// <summary>
+        /// 将日志打印到屏幕
+        /// </summary>
+        /// <param name="content">动作</param>
+        /// <param name="status">状态</param>
+        private void PrintLog(string content, string status)
+        {
+            string log = string.Format("{0}\t{1}\t{2}\r\n", DateTime.Now.ToString(), content, status);
+
+            textBox_log.Text += log;
+
+            textBox_log.Select(0, 0);
+        }
+
+
+        /// <summary>
+        /// 网络状态检测
+        /// </summary>
+        /// <param name="ping_url">需要ping的网址或IP地址，默认为百度主页</param>
+        /// <returns>true为联网，否则为未联网</returns>
+        public bool CheckNetStatus(string ping_url = "www.baidu.com")
+        {
+            try
+            {
+                Ping ping = new Ping();
+                PingOptions ping_option = new PingOptions();
+                byte[] buffer = Encoding.UTF8.GetBytes("");
+                int timeout = 1000;
+
+                ping_option.DontFragment = true;
+                PingReply ping_reply = ping.Send(ping_url, timeout, buffer, ping_option);
+
+                string info = ping_reply.Status.ToString();
+
+                if (info == "Success")
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         //--------------------------------------------------------------
         //错误报告
         //--------------------------------------------------------------
@@ -353,11 +482,11 @@ namespace HydroInfoReptile
         {
             try
             {
-                System.Diagnostics.Process.Start("notepad++.exe", Class_Table._dataDir + DateTime.Now.ToString("yyyyMMdd") + ".html");
+                Process.Start("notepad++.exe", Class_Table._dataDir + DateTime.Now.ToString("yyyyMMdd") + ".html");
             }
             catch
             {
-                System.Diagnostics.Process.Start("notepad.exe", Class_Table._dataDir + DateTime.Now.ToString("yyyyMMdd") + ".html");
+                Process.Start("notepad.exe", Class_Table._dataDir + DateTime.Now.ToString("yyyyMMdd") + ".html");
             }
         }
 
@@ -369,7 +498,7 @@ namespace HydroInfoReptile
         /// <param name="e"></param>
         private void linkLabel_log_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start("notepad.exe", "history.log");
+            Process.Start("notepad.exe", "history.log");
         }
 
 
@@ -380,7 +509,7 @@ namespace HydroInfoReptile
         /// <param name="e"></param>
         private void linkLabel_Data_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Class_Table._dataDir);
+            Process.Start(Class_Table._dataDir);
         }
     }
 }

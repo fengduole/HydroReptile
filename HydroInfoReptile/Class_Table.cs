@@ -154,9 +154,9 @@ namespace HydroInfoReptile
         //大型水库
         private void ExtractSK(string html)
         {
-            string s = CutAndDel(ref html, "全国大型水库实时水情", "全国大江大河实时水情");
+            string s = Extract(ref html, "全国大型水库实时水情", "全国大江大河实时水情");
 
-            _tableTime = CutAndDel(ref s, "报表日期:<SPAN id=skdate>", "</SPAN>");
+            _tableTime = Extract(ref s, "报表日期:<SPAN id=skdate>", "</SPAN>");
 
             _n_item = 0;
 
@@ -177,20 +177,20 @@ namespace HydroInfoReptile
             //解析数据
             while (s.IndexOf("<TR class=td-show") >= 0)
             {
-                string temp = CutAndDel(ref s, "<TR class=td-show-", "</TR>");
+                string temp = Extract(ref s, "<TR class=td-show-", "</TR>");
                 _n_item++;
 
                 _item[_n_item].colorState = int.Parse(temp[0].ToString());
 
-                _item[_n_item].subitem[1] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[2] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[3] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[4] = CutAndDel(ref temp, "<FONT", ">", "</FONT>");
-                _item[_n_item].subitem[5] = CutAndDel(ref temp, "<FONT", ">", "&nbsp;");
-                _item[_n_item].subitem[6] = (_item[_n_item].subitem[5] != "--") ? CutAndDel(ref temp, "<FONT", ">", "</FONT>") : "";
-                _item[_n_item].subitem[7] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[8] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[9] = CutAndDel(ref temp, "<TD", ">", "&nbsp;");
+                _item[_n_item].subitem[1] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[2] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[3] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[4] = Extract(ref temp, "<FONT", ">", "</FONT>");
+                _item[_n_item].subitem[5] = Extract(ref temp, "<FONT", ">", "&nbsp;");
+                _item[_n_item].subitem[6] = (_item[_n_item].subitem[5] != "--") ? Extract(ref temp, "<FONT", ">", "</FONT>") : "";
+                _item[_n_item].subitem[7] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[8] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[9] = Extract(ref temp, "<TD", ">", "&nbsp;");
 
                 if (_n_item == 156)
                 {
@@ -204,9 +204,9 @@ namespace HydroInfoReptile
         //大江大河
         private void ExtractJH(string html)
         {
-            string s = CutAndDel(ref html, "全国大江大河实时水情", "全国重点站实时雨情");
+            string s = Extract(ref html, "全国大江大河实时水情", "全国重点站实时雨情");
 
-            _tableTime = CutAndDel(ref s, "date>", "</SPAN>");
+            _tableTime = Extract(ref s, "date>", "</SPAN>");
 
             _n_item = 0;
 
@@ -226,20 +226,20 @@ namespace HydroInfoReptile
             //解析数据
             while (s.IndexOf("<TR class=td-show") >= 0)
             {
-                string temp = CutAndDel(ref s, "<TR class=td-show-", "</TR>");
+                string temp = Extract(ref s, "<TR class=td-show-", "</TR>");
                 _n_item++;
 
                 _item[_n_item].colorState = int.Parse(temp[0].ToString());
 
-                _item[_n_item].subitem[1] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[2] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[3] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[4] = CutAndDel(ref temp, "<FONT", ">", "</FONT>");
-                _item[_n_item].subitem[5] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[6] = CutAndDel(ref temp, "<FONT", ">", "</FONT>");
-                _item[_n_item].subitem[7] = (_item[_n_item].subitem[6] != "--") ? CutAndDel(ref temp, "<FONT", ">", "</FONT>") : "";
-                _item[_n_item].subitem[8] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[9] = CutAndDel(ref temp, "<TD", ">", "&nbsp;");
+                _item[_n_item].subitem[1] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[2] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[3] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[4] = Extract(ref temp, "<FONT", ">", "</FONT>");
+                _item[_n_item].subitem[5] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[6] = Extract(ref temp, "<FONT", ">", "</FONT>");
+                _item[_n_item].subitem[7] = (_item[_n_item].subitem[6] != "--") ? Extract(ref temp, "<FONT", ">", "</FONT>") : "";
+                _item[_n_item].subitem[8] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[9] = Extract(ref temp, "<TD", ">", "&nbsp;");
             }
         }
 
@@ -247,9 +247,9 @@ namespace HydroInfoReptile
         //重点雨水情
         private void ExtractYS(string html)
         {
-            string s = CutAndDel(ref html, "全国重点站实时雨情", "搜索</STRONG>");
+            string s = Extract(ref html, "全国重点站实时雨情", "搜索</STRONG>");
 
-            _tableTime = CutAndDel(ref s, "date>", "</SPAN>");
+            _tableTime = Extract(ref s, "date>", "</SPAN>");
 
             _n_item = 0;
 
@@ -268,18 +268,18 @@ namespace HydroInfoReptile
             //解析数据
             while (s.IndexOf("<TR class=td-show") >= 0)
             {
-                string temp = CutAndDel(ref s, "<TR class=td-show-", "</TR>");
+                string temp = Extract(ref s, "<TR class=td-show-", "</TR>");
                 _n_item++;
 
                 _item[_n_item].colorState = int.Parse(temp[0].ToString());
 
-                _item[_n_item].subitem[1] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[2] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[3] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[4] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[5] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[6] = CutAndDel(ref temp, "<TD", ">", "</TD>");
-                _item[_n_item].subitem[7] = CutAndDel(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[1] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[2] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[3] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[4] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[5] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[6] = Extract(ref temp, "<TD", ">", "</TD>");
+                _item[_n_item].subitem[7] = Extract(ref temp, "<TD", ">", "</TD>");
             }
         }
 
@@ -312,8 +312,7 @@ namespace HydroInfoReptile
         }
 
 
-        //截取并删除
-        private string CutAndDel(ref string str, string start, string end)
+        private string Extract(ref string str, string start, string end)
         {
             string ans;
 
@@ -325,8 +324,7 @@ namespace HydroInfoReptile
         }
 
 
-        //
-        private string CutAndDel(ref string str, string startBegin, string startEnd, string end)
+        private string Extract(ref string str, string startBegin, string startEnd, string end)
         {
             string ans;
 
